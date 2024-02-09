@@ -1,0 +1,80 @@
+-- Summarization
+-- Subtotal
+-- Grouping Sets
+
+-- A grouping set is a set of columns by which we group 
+-- using rollup function
+
+CREATE TABLE courses(
+	course_id SERIAL PRIMARY KEY,
+	course_name VARCHAR(100) NOT NULL,
+	course_level VARCHAR(100) NOT NULL,
+	sold_units INT NOT NULL 
+);
+
+INSERT INTO courses (course_name, course_level, sold_units) VALUES
+('Machine Learning with Python','Premium',100),
+('Data Science Bootcamp','Premium',50),
+('Introduction to Python','Basic',200),
+('Understanding MongoDB','Premium',100),
+('Algorithm Design in Python','Premium',200)
+
+-- Find total unit sold by each course level
+SELECT 
+	course_level,
+	SUM(sold_units) as "Total Sold"
+FROM courses 
+GROUP BY course_level
+ 
+-- using rollup function
+SELECT 
+	course_level,
+	course_name,
+	SUM(sold_units) as "Total Sold"
+FROM courses 
+GROUP BY 
+	ROLLUP(course_level,course_name)
+
+
+
+ -- Subtotals with Rollups
+
+CREATE TABLE INVENTORY(
+	inventory_id SERIAL PRIMARY KEY,
+	category VARCHAR(100) NOT NULL,
+	sub_category VARCHAR(100) NOT NULL,
+	product VARCHAR(100) NOT NULL,
+	quantity int
+)
+   
+INSERT INTO inventory(category, sub_category, product, quantity) VALUES
+('Furniture','Chair','Black',10),
+('Furniture','Chair','Brown',10),
+('Furniture','Desk','Blue',10),
+('Equipment','Computer','Mac',5),
+('Equipment','Computer','PC',5),
+('Equipment','Monitor','Dell',5);
+
+-- group the data by category and subcategory. i.e. product is broken down by category and subcategory
+SELECT category, sub_category, count(product) AS "Total Products", sum(quantity) AS "Total Quantity"
+FROM inventory
+GROUP BY ROLLUP(category, sub_category)
+
+-- Use SUBTOTAL
+SELECT category, sub_category, count(product) AS "Total Products", sum(quantity) AS "Total Quantity"
+FROM inventory
+GROUP BY ROLLUP(category, sub_category)
+
+--
+SELECT
+	CASE
+	WHEN GROUPING(CATEGORY) = 1 then 'GRAND TOTAL'
+	WHEN GROUPING(SUB_CATEGORY) = 1 then 'SUB TOTAL'
+	ELSE 
+		COALESCE(category,'')
+	END AS "category",
+	COALESCE(sub_category,'') AS "Sub Category",
+	SUM(quantity) as "Quantity"
+FROM inventory
+GROUP BY 
+	ROLLUP(category,sub_category)
