@@ -1,0 +1,57 @@
+-- Using HR database (Exercise)
+-------------------------------------------------------------------------
+
+--1.  Get the difference between highest and lowest salary
+SELECT job_id,MAX(salary) - MIN(salary) FROM employees GROUP BY job_id
+
+-------------------------------------------------------------------------
+
+--2. write a query to return lowest paid salary paid by manager_id  
+SELECT 
+	manager_id,
+	MIN(salary)
+FROM employees
+WHERE 
+	manager_id IS NOT NULL
+	AND manager_id != 0
+GROUP BY manager_id
+ORDER BY MIN(salary) DESC
+
+-------------------------------------------------------------------------
+
+--2. Average salary for each department with more than 10 employees
+
+SELECT department_id, AVG(salary), COUNT(*)  FROM employees
+GROUP BY department_id
+HAVING COUNT(*) > 10
+
+-------------------------------------------------------------------------
+
+--3. Write a query to list maximum salary of each post for max salary is at or above $5000
+SELECT job_id,MAX(salary) FROM employees GROUP BY job_id HAVING MAX(salary) >= 5000
+
+-------------------------------------------------------------------------
+
+--4. Write a query to get the job_id and all the emplpyee_id within each job_id group.
+select job_id, array_agg(employee_id) as "All employee ids"
+from employees group by job_id	
+
+-------------------------------------------------------------------------
+
+--5. Get all employees and discard the last four characters from email
+SELECT employee_id, substr(email,1,length(email)-4) from employees
+
+-------------------------------------------------------------------------
+
+--6. List all employees with first_name starts with letters "A","C" or "H"
+SELECT * FROM employees WHERE first_name LIKE 'A%' or first_name LIKE  'C%' or first_name LIKE  'H%'
+
+-------------------------------------------------------------------------
+
+--7. Find letter c in last_name at 3rd or greater position
+SELECT * FROM employees WHERE position('c' in last_name) >=3
+
+-------------------------------------------------------------------------
+
+--8. Update the phone number column with 888 where substring 123 found
+UPDATE employees SET phone_number = REPLACE(phone_number,'123','888') WHERE phone_number LIKE '%123%'

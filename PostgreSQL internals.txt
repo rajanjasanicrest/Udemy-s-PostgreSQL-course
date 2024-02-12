@@ -1,0 +1,58 @@
+-- List all DB users
+SELECT * FROM pg_user
+
+-- List all DBs and their size with/witout indexes
+SELECT 
+	datname as database_name,
+	pg_size_pretty(pg_database_size(datname)) as database_size
+FROM pg_database
+ORDER BY pg_database_size(datname) desc;
+
+-- List all schema names starting with 'pg' largely for internal schemas
+SELECT * FROM information_schema.schemata
+WHERE schema_name like 'pg%'
+
+-- List all tables
+SELECT * FROM information_schema.tables
+WHERE table_schema  = 'public'
+
+-- List all columns 
+SELECT column_name, data_type, dtd_identifier FROM information_schema.columns
+WHERE table_name = 'employees'
+
+-- Viewing System Metadata
+SELECT 
+	CURRENT_CATALOG,
+	CURRENT_DATABASE(),
+	CURRENT_SCHEMA,
+	CURRENT_USER,
+	SESSION_USER
+
+-- Viewing Version
+SELECT version();
+
+-- Viewing priviliges Information across database, tables and columns for current user
+SELECT 
+	has_database_privilege('hr','CREATE'),
+	has_schema_privilege('public','USAGE'),
+	has_schema_privilege('public','CREATE'),
+	has_table_privilege('employees','INSERT'),
+	has_any_column_privilege('employees','SELECT')
+	
+-- Viewing priviliges Information across columns for a certain user user
+SELECT 
+	has_column_privilege('john','employees','first_name','SELECT')
+	
+-- Using System Administration functions
+-- View current_timezone information
+SELECT current_setting('timezone')
+
+-- get the number of live and dead rows in tables
+SELECT 
+	relname,
+	n_live_tup,
+	n_dead_tup
+FROM pg_stat_user_tables
+
+---------------------------------------------------
+show data_directory

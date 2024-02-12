@@ -1,0 +1,80 @@
+-- Managing Tables......
+-- Using SELECT INTO
+SELECT * INTO movies_18 FROM movies WHERE movie_lang = 'English' and age_certificate = '18' 
+
+select * from movies_18
+
+-- Using Select into and Joins create a new table with top 10 most profitable movies
+SELECT m.movie_name, (COALESCE(REVENUES_DOMESTIC,0) + COALESCE(REVENUES_INTERNATIONAL,0)) AS "Total Profit"
+INTO top_10_profitable_movies
+FROM movies m
+INNER JOIN movies_revenues mr ON mr.movie_id = m.movie_id
+
+-- Create a table called top_10_directors with 10 most profitable movies
+SELECT dr.first_name, MAX(COALESCE(REVENUES_DOMESTIC,0) + COALESCE(REVENUES_INTERNATIONAL,0)) AS "Total Profit"
+INTO top_10_directors
+FROM movies m
+INNER JOIN movies_revenues mr ON mr.movie_id = m.movie_id
+INNER JOIN directors dr ON dr.director_id = m.director_id
+GROUP BY dr.first_name
+ORDER BY 2 DESC
+LIMIT 10
+
+SELECT * FROM top_10_directors
+
+--------------------------------------------------------
+Duplicate a table with all the data
+
+Create table movies1 AS (select * from movies)
+
+--------------------------------------------------------
+Create table movies2 AS (select * from movies) WITH NO DATA
+
+--------------------------------------------------------
+-- Importing Data from a csv file
+CREATE TABLE countries_iso_codes
+(
+	country_id SERIAL PRIMARY KEY,
+	country_name VARCHAR(255),
+	iso_code_2 VARCHAR(2),
+	iso_code_3 VARCHAR(3),
+	region VARCHAR(200),
+	sub_region VARCHAR(200)
+)
+
+-- lets import data using copy command at terminal
+/*
+Command : \copy countries_iso_codes(country_name, iso_code_2, iso_code_3,region,sub_region)
+			FROM 'countries_iso_codes.csv' DELIMITER ',' CSV HEADER;
+*/
+
+SELECT * FROM countries_iso_codes
+
+-- Export data in form of CSV file.
+-- Syntax : COPY table_name	To 'path' DELIMITER ',' CSV HEADER;
+
+-- deleting duplicate records in a table
+Create table colors(
+	color_id SERIAL PRIMARY KEY,
+	color VARCHAR(100)
+);
+
+-- Insert some data!!!!
+INSERT INTO colors (color) Values
+('red'),
+('yellow'),
+('red'),
+('yellow'),
+('red'),
+('yellow'),
+('green');
+
+
+-- method 1 : deleting duplicate records via USING statement
+DELETE FROM colors a USING colors b
+WHERE a.color_id > b.color_id
+AND a.color = b.color
+
+select * from colors
+
+

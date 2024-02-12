@@ -1,0 +1,22 @@
+-- Using stocks database (Exercise)
+-------------------------------------------------------------------------
+
+--1.  Get first 10 records from stock_prices
+SELECT * FROM stocks_prices WHERE symbol_id = 1
+
+-------------------------------------------------------------------------
+
+--2. get first or last record per each group
+SELECT symbol_id, MIN(price_date)
+FROM stocks_prices
+GROUP BY symbol_id
+
+-------------------------------------------------------------------------
+
+--3. Calculate cuberoot on close prices in PostgreSQL
+
+SELECT close_price, ROUND(CBRT(close_price) :: NUMERIC,2) as "Cube root prices"
+FROM stocks_prices
+WHERE symbol_id = 1
+ORDER BY price_date DESC
+

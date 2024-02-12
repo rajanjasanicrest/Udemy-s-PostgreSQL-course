@@ -1,0 +1,52 @@
+-- Transactions in PlPGSQL
+BEGIN;
+	UPDATE accounts 
+	SET balance = balance + 50
+	WHERE name = 'Adam';
+	
+end; 
+
+----------------------
+
+UPDATE accounts
+SET balance = 200
+
+----------------------
+
+BEGIN;
+UPDATE accounts
+SET balance = balance + 50
+WHERE name = 'Adam';
+commit;
+select * from accounts
+
+----------------------
+
+-- Savepoints
+-- it supports the rollback of a partial transaction to a before placed savepoints which are like a 
+-- check points till where database was consistent.
+
+-- Syntax to create savepoint: SAVEPOINT savepoint_name; 
+-- Syntax to roll back: ROLLBACK TO savepoint_name;
+
+----------------------
+-- demonstration of using Savepoints
+BEGIN;
+
+UPDATE accounts 
+SET balance = balance - 50
+WHERE name = 'Adam';
+
+SAVEPOINT first_update;
+
+UPDATE accounts 
+SET balance = balance - 50
+WHERE name = 'Adam';
+
+
+
+ROLLBACK TO first_update
+select * from accounts;
+
+commit;
+select * from accounts

@@ -1,0 +1,131 @@
+-- NorthWind Database Exercise
+--------------------------------------------------------------
+
+-- 1. Get all orders that are shipping to USA or France
+SELECT * FROM orders WHERE ship_country IN ('USA','France') ORDER BY ship_country
+
+--------------------------------------------------------------
+
+--2. Count total number of orders shipping to USA or France
+SELECT ship_country,COUNT(*) FROM orders WHERE ship_country IN ('USA','France') GROUP BY ship_country
+
+--------------------------------------------------------------
+
+--3. Get orders shipping to any countries within Latin America
+SELECT * FROM orders WHERE ship_country IN ('Argentina', 'Bolivia', 'Brazil', 'Chile', 'Colombia', 'Costa Rica', 'Cuba', 'Dominican Republic', 'Ecuador, El Salvador', 'Guatemala', 'Haiti', 'Honduras', 'Mexico', 'Nicaragua', 'Panama', 'Paraguay', 'Peru', 'Uruguay', 'Venezuela') ORDER BY ship_country
+
+--------------------------------------------------------------
+
+--4. Get order total amount per each order line
+-- select * from order_details
+SELECT o.order_id, ROUND(SUM((od.unit_price * od.quantity) - discount) :: numeric ,2)
+FROM orders o
+JOIN order_details od on o.order_id = od.order_id
+GROUP BY o.order_id
+
+--------------------------------------------------------------
+
+--5. Find the first and latest order date
+SELECT MAX(order_date) AS "Latest Order Date",MIN(order_date) AS "First Order Date" FROM orders
+
+--------------------------------------------------------------
+
+--6. Get total products in each category
+SELECT ct.category_name,COUNT(*) FROM products pd
+INNER JOIN categories ct ON ct.category_id = pd.category_id
+GROUP BY ct.category_name ORDER BY 2 DESC
+
+--------------------------------------------------------------
+
+--7. List all products that needs reordering
+SELECT * FROM products WHERE units_in_stock <= reorder_level
+
+--------------------------------------------------------------
+
+--8. List top 5 highest freight charges
+SELECT freight FROM orders ORDER BY 1 DESC LIMIT 5
+
+--------------------------------------------------------------
+
+--9. List top 5 highest freight charges in year 1977
+SELECT EXTRACT('year' from order_date),freight FROM orders WHERE EXTRACT('year' from order_date) = 1997 ORDER BY 2 DESC LIMIT 5
+select * from orders
+--------------------------------------------------------------
+
+--10. Customers with no orders
+SELECT company_name FROM customers WHERE customer_id NOT IN (SELECT customer_id FROM orders)
+
+--------------------------------------------------------------
+
+--11. Get top customers with their total order amount spend
+SELECT 
+	c.company_name,
+	o.order_id,
+	ROUND(SUM((od.unit_price * od.quantity) - od.discount) :: Numeric, 2) "Total Amount"
+	FROM orders o
+	INNER JOIN order_details od ON o.order_id = od.order_id
+	INNER JOIN customers c on o.customer_id = c.customer_id
+	GROUP BY c.company_name,o.order_id
+	ORDER BY 3 DESC LIMIT 10
+
+--------------------------------------------------------------
+
+--12. Orders with many line of items
+SELECT order_id, COUNT(*) FROM ORDER_DETAILS GROUP BY order_id ORDER BY 2 DESC
+
+--------------------------------------------------------------
+
+--13. Orders with double enty line of items
+SELECT order_id, COUNT(*) FROM ORDER_DETAILS GROUP BY order_id HAVING COUNT(*) = 2 ORDER BY 2 DESC
+
+
+--------------------------------------------------------------
+
+--14. Get the detail of the items too!
+WITH duplicate_entries AS
+(
+	SELECT
+		order_id,
+		quantity
+	FROM order_details
+	WHERE 
+		quantity > 60
+	GROUP BY 
+		order_id,
+		quantity
+	HAVING 
+		COUNT(*) > 1
+	ORDER BY 
+		order_id
+)
+SELECT * FROM order_details
+WHERE order_id IN (SELECT order_id FROM duplicate_entries)
+ORDER BY 
+	order_id
+
+--------------------------------------------------------------
+
+--15 Get all late shipped orders
+SELECT * FROM orders WHERE shipped_date > required_date
+
+--------------------------------------------------------------
+
+--16 Get all late shipped orders
+SELECT e.first_name,  COUNT(*) FROM orders
+INNER JOIN employees e ON e.employee_id = orders.employee_id
+WHERE shipped_date > required_date
+GROUP BY e.first_name
+--------------------------------------------------------------
+
+--17 Get first order from each country
+WITH orders_by_country AS 
+(
+	SELECT 
+		ship_country,
+		order_id,
+		order_date,
+		row_number() over (partition by ship_country ORDER BY SHIP_COUNTRY, ORDER_DATE) country_row_number
+	FROM orders
+)
+SELECT ship_country, order_id, order_date FROM orders_by_country WHERE country_row_number = 1
+--------------------------------------------------------------

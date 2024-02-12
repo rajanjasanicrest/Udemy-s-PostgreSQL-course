@@ -1,0 +1,48 @@
+-- Creating Custom index
+CREATE TABLE ssn(
+	ssn TEXT
+)
+
+INSERT INTO ssn(ssn) values
+('111-11-0100'),
+('222-22-0120'),
+('333-33-0140'),
+('444-44-0160')
+
+CREATE OR REPLACE FUNCTION fn_fix_ssn(text) RETURNS text AS
+$$
+	BEGIN		
+		RETURN  substring($1,8) || 	replace(substring($1,1,7),'-','');
+	END;
+$$ LANGUAGE PLPGSQL IMMUTABLE
+
+CREATE OR REPLACE FUNCTION fn_compare_ssn(ss1 text,ss2 text) RETURNS int AS
+$$
+	BEGIN	
+		if
+			fn_fix_ssn($1) < fn_fix_ssn($2) then return -1;
+		elseif fn_fix_ssn($1) > fn_fix_ssn($2) then return 1;
+		else return 0;
+		end if;
+	END;
+$$ LANGUAGE PLPGSQL IMMUTABLE
+
+-- creating custom operator
+CREATE OPERATOR CLASS op_class_ssn_ops
+FOR TYPE text USING btree
+AS
+	OPERATOR 1 <,
+	OPERATOR 2 <=,
+	OPERATOR 3 =,
+	OPERATOR 4 >=,
+	OPERATOR 5 >, 
+	FUNCTION 1 fn_compare_ssn(text,text);
+	
+-- CREATE CUSTOM INDEX
+CREATE INDEX idx_ssn on ssn (SSN op_class_ssn_ops);
+	
+SHOW enable_seqscan;
+SET enable_seqscan = OFF
+
+--
+explain select * from ssn where ssn = '010011111'

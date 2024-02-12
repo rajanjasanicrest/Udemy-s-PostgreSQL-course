@@ -1,0 +1,184 @@
+-- Creating Crosstab reports
+CREATE EXTENSION IF NOT EXISTS tablefunc--1.0;
+select * from pg_extension;
+
+-- creating a testing table and data
+CREATE TABLE scores (
+	score_id SERIAL PRIMARY KEY,
+	name VARCHAR (100),
+	subject VARCHAR (100),
+	score NUMEIC(4,2),
+	score_date DATE
+
+INSERT INTO scores (name,subject,score, score_date) VALUES 
+('Adam','Math',10,'2020-01-01'),
+('Adam','English',8,'2020-02-01'),
+('Adam','History',7,'2020-03-01'),
+('Adam','Music',9,'2020-04-01'),
+('Linda','Math',12,'2020-01-01'),  	
+('Linda','English',10,'2020-02-01'),
+('Linda','History',8,'2020-03-01'),
+('Linda','Music',6,'2020-04-01');
+	
+------------------------------------------------------------
+-- create 1st table
+SELECT * FROM crosstab
+(
+	'SELECT name,subject,score FROM scores'
+) AS ct
+	(
+		Name VARCHAR,
+		Maths NUMERIC,
+		History NUMERIC,
+		English NUMERIC,
+		Music NUMERIC
+	)
+
+-------------------------------------------------------------
+-- Analyzing Crosstab report of rainfalldata.sql
+SELECT  * FROM rainfalls
+SELECT DISTINCT year FROM rainfalls
+--create a pivot table to display sum of all raindays per each location for each year
+SELECT *
+FROM crosstab	
+( 
+	'SELECT
+		location,
+		year,
+		sum(raindays)
+	FROM rainfalls
+	group by location,year
+	order by location,year 
+'
+)
+AS ct(
+	"Location" TEXT,
+	"2012" bigint,
+	"2013" bigint,
+	"2014" bigint,
+	"2015" bigint,
+	"2016" bigint,
+	"2017" bigint
+) 
+-----------------------------
+
+SELECT *
+FROM crosstab	
+( 
+	'SELECT
+		location, month,
+		sum(raindays)
+	FROM rainfalls
+	group by location, month
+	order by location,month 
+'
+)
+AS ct(
+	"Location" TEXT,
+	"jan" bigint,
+	"feb" bigint,
+	"mar" bigint,
+	"apr" bigint,
+	"jun" bigint,
+	"jul" bigint,
+	"aug" bigint,
+	"sep" bigint,
+	"oct" bigint,
+	"nov" bigint,
+	"dec" bigint
+)
+
+----------------------------------------------------------------------
+SELECT *
+FROM crosstab	
+( 
+	'SELECT
+		month, location,
+		sum(raindays) :: int
+	FROM rainfalls
+	group by  month,location
+	order by month,location
+'
+)
+AS ct(
+	month integer,
+	"Dubai" int,
+	"France" int,
+	"Germany" int,
+	"London" int,
+	"Malaysia" int,
+	"Qatar" int,
+	"Sydney" int,
+	"Singapore" int,
+	"Tokyo" int
+)
+
+
+-- Dynamic Pivots 
+SELECT * FROM crosstabs
+
+SELECT 
+	location,
+	json_object_agg(year, total_raindays ORDER BY year) as "mydata"
+FROM 
+(
+	SELECT 
+		location,
+		year,
+		SUM(raindays) AS total_raindays
+	FROM rainfalls
+	GROUP BY
+		location,
+		year
+) s
+GROUP BY location
+ORDER BY location; 
+
+-------------------------------------------------------------------------------------
+
+-- creating a function which generates a syntax for dynamic crosstab query 
+
+CREATE OR REPLACE FUNCTION pivotcode (
+	tablename VARCHAR,
+	myrow VARCHAR,
+	mycol VARCHAR,
+	mycell VARCHAR,
+	celldatatype VARCHAR
+) RETURNS VARCHAR
+LANGUAGE PLPGSQL AS
+$$
+	DECLARE
+		dynsql1 VARCHAR;
+		dynsql2 VARCHAR;
+		columnlist VARCHAR;
+	BEGIN
+			-- 1 retrive list of all DISTINCT column name
+			dynsql1 = 'SELECT STRING_AGG(DISTINCT ''_''||'||mycol||'||'' '||celldatatype||''','','' ORDER BY ''_''||'||mycol||'||'' '||celldatatype||''') FROM '||tablename||';';
+			EXECUTE dynsql1 INTO columnlist;
+			
+			-- 2. setup the crosstab query 
+			dynsql2 = 'SELECT * FROM crosstab (
+			 ''SELECT '||myrow||','||mycol||','||mycell||' FROM '||tablename||' GROUP BY 1,2 ORDER BY 1,2'',
+			 ''SELECT DISTINCT '||mycol||' FROM '||tablename||' ORDER BY 1''
+			)
+			AS newtable (
+			 '||myrow||' VARCHAR,'||columnlist||'
+			 );';
+			 
+			-- 3. return the query
+	
+			RETURN dynsql2;
+		
+
+
+	END;
+$$
+select pivotcode('rainfalls', 'year', 'location' ,'SUM(raindays)', 'NUMERIC' )
+
+SELECT * FROM crosstab (
+			 'SELECT year,location,SUM(raindays) FROM rainfalls GROUP BY 1,2 ORDER BY 1,2',
+			 'SELECT DISTINCT location FROM rainfalls ORDER BY 1'
+)
+			AS newtable (
+			 year VARCHAR,_Dubai NUMERIC,_France NUMERIC,_Germany NUMERIC,_London NUMERIC,_Malaysia NUMERIC,_Qatar NUMERIC,_Singapore NUMERIC,_Sydney NUMERIC,_Tokyo NUMERIC
+			 );

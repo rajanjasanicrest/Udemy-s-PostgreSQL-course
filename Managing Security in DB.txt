@@ -1,0 +1,47 @@
+-- Create Role
+CREATE ROLE hr NOSUPERUSER NOCREATEDB NOCREATEROLE NOLOGIN
+CREATE ROLE programmers NOSUPERUSER NOCREATEDB NOCREATEROLE NOLOGIN
+
+------------------------------------------------------------------------------------
+CREATE ROLE john NOSUPERUSER NOCREATEDB NOCREATEROLE LOGIN PASSWORD 'password123'
+CREATE ROLE Linda NOSUPERUSER NOCREATEDB NOCREATEROLE LOGIN PASSWORD 'password123'
+------------------------------------------------------------------------------------
+-- revoking user role from database!
+REVOKE ALL ON DATABASE hr FROM public
+------------------------------------------------------------------------------------
+GRANT hr TO john
+GRANT programmers TO linda
+------------------------------------------------------------------------------------
+-- Creating Policy
+CREATE POLICY policy_name ON table_name
+FOR SELECT|INSERT|UPDATE|DELETE
+TO role_name
+USING(expression)
+
+-- columns level policy
+CREATE POLICY p_job_hr_max_salary_10000 ON jobs
+FOR SELECT
+TO hr
+USING(max_salary >= 10000);
+
+-- row level policy
+CREATE POLICY p_jobs_hr_min_salary_4000 ON jobs
+FOR SELECT TO hr
+USING (min_salary >= 4000);
+
+DROP policy  p_jobs_hr_min_salary_4000 ON jobs
+
+-- having row level security
+ALTER TABLE t_user_data EABLE ROW LEVEL SECURITY;
+
+-- GETTING CURRENT USER
+SELECT CURRENT_USER
+
+-- Generalising Row level Security
+CREATE POLICY rls_t_users_data_by_username_session ON t_user_data
+FOR ALL TO PUBLIC
+USING(username = current_setting('rls.username'))
+
+--Inspecting permission
+-- \z tablename in terminal will list permissions for given tablename
+
